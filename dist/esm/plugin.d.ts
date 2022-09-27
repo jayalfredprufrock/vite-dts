@@ -1,2 +1,2 @@
 import type { Plugin } from 'vite';
-export default function dts(): Plugin;
+export declare const plugin: Plugin;
