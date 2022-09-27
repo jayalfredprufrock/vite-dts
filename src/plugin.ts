@@ -3,13 +3,7 @@ import loadJSON from 'load-json-file'
 import * as path from 'path'
 import * as fs from 'fs'
 
-export default function dts(): Plugin {
-
-  let dtsModule: string;
-  let esModulePath: string;
-  let cjsModulePath: string;
-
-  return {
+export const plugin: Plugin = {
     name: 'vite:dts',
     apply: 'build',
     async configResolved(config) {
@@ -48,30 +42,27 @@ export default function dts(): Plugin {
       const hasDefaultExport =
         /^(export default |export \{[^}]+? as default\s*[,}])/m.test(entryImpl)
 
-      dtsModule =
+      const dtsModule =
         `export * from "${posixEntryImportPath}"` +
         (hasDefaultExport ? `\nexport {default} from "${posixEntryImportPath}"` : ``)
 
-      cjsModulePath = path.relative(outDir, pkg.main)
-      esModulePath = path.relative(outDir, pkg.module)
-    },
+      const cjsModulePath = path.relative(outDir, pkg.main)
+      const esModulePath = path.relative(outDir, pkg.module)
 
-    generateBundle({ entryFileNames }) {
-      if (entryFileNames == cjsModulePath) {
-        this.emitFile({
-          type: 'asset',
-          fileName: cjsModulePath.replace(/\.js$/, '.d.ts'),
-          source: dtsModule,
-        })
-      } else if (entryFileNames == esModulePath) {
-        this.emitFile({
-          type: 'asset',
-          fileName: esModulePath.replace(/\.js$/, '.d.ts'),
-          source: dtsModule,
-        })
+      plugin.generateBundle = function ({ entryFileNames }) {
+        if (entryFileNames == cjsModulePath) {
+          this.emitFile({
+            type: 'asset',
+            fileName: cjsModulePath.replace(/\.js$/, '.d.ts'),
+            source: dtsModule,
+          })
+        } else if (entryFileNames == esModulePath) {
+          this.emitFile({
+            type: 'asset',
+            fileName: esModulePath.replace(/\.js$/, '.d.ts'),
+            source: dtsModule,
+          })
+        }
       }
-    }
-
-
-  }
+    },
 }
