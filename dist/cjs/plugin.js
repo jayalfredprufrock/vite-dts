@@ -47,28 +47,35 @@ exports.plugin = {
         if (!pkg.module && formats.includes('es')) {
             return logger.warn(`[vite-dts] Expected "module" to exist in package.json`);
         }
-        const entryPath = path.resolve(config.root, entry);
-        const entryImportPath = path.relative(path.resolve(config.root, outDir), entryPath.replace(/\.tsx?$/, ''));
-        const posixEntryImportPath = entryImportPath.split(path.sep).join(path.posix.sep);
-        const entryImpl = fs.readFileSync(entryPath, 'utf8');
-        const hasDefaultExport = /^(export default |export \{[^}]+? as default\s*[,}])/m.test(entryImpl);
-        const dtsModule = `export * from "${posixEntryImportPath}"` +
-            (hasDefaultExport ? `\nexport {default} from "${posixEntryImportPath}"` : ``);
         const cjsModulePath = path.relative(outDir, pkg.main);
         const esModulePath = path.relative(outDir, pkg.module);
+        const entryPaths = typeof entry === 'object' ? (Array.isArray(entry) ? entry : Object.values(entry)) : [entry];
+        const dtsModule = [];
+        for (const entryPath of entryPaths) {
+            const resolvedEntryPath = path.resolve(config.root, entryPath);
+            const entryImportPath = path.relative(path.resolve(config.root, outDir), resolvedEntryPath.replace(/\.tsx?$/, ''));
+            const posixEntryImportPath = entryImportPath.split(path.sep).join(path.posix.sep);
+            const entryImpl = fs.readFileSync(resolvedEntryPath, 'utf8');
+            const hasDefaultExport = /^(export default |export \{[^}]+? as default\s*[,}])/m.test(entryImpl);
+            dtsModule.push(`export * from "${posixEntryImportPath}"`);
+            if (hasDefaultExport) {
+                dtsModule.push(`export {default} from "${posixEntryImportPath}"`);
+            }
+        }
+        const source = dtsModule.join("\n");
         exports.plugin.generateBundle = function ({ entryFileNames }) {
             if (entryFileNames == cjsModulePath) {
                 this.emitFile({
                     type: 'asset',
                     fileName: cjsModulePath.replace(/\.js$/, '.d.ts'),
-                    source: dtsModule,
+                    source,
                 });
             }
             else if (entryFileNames == esModulePath) {
                 this.emitFile({
                     type: 'asset',
                     fileName: esModulePath.replace(/\.js$/, '.d.ts'),
-                    source: dtsModule,
+                    source,
                 });
             }
         };
