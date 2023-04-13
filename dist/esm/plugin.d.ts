@@ -1,2 +1,3 @@
-import type { Plugin } from 'vite';
-export declare const plugin: Plugin;
+import type { PluginOption } from 'vite';
+export declare const dts: () => PluginOption;
+export default dts;
