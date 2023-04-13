@@ -1,9 +1,10 @@
-import type { Plugin } from 'vite'
+import type { Plugin, PluginOption } from 'vite'
 import loadJSON from 'load-json-file'
 import * as path from 'path'
 import * as fs from 'fs'
 
-export const plugin: Plugin = {
+export const dts = (): PluginOption => {
+  const plugin: Plugin = {
     name: 'vite:dts',
     apply: 'build',
     async configResolved(config) {
@@ -33,29 +34,38 @@ export const plugin: Plugin = {
       const cjsModulePath = path.relative(outDir, pkg.main)
       const esModulePath = path.relative(outDir, pkg.module)
 
-      const entryPaths = typeof entry === 'object' ? (Array.isArray(entry) ? entry : Object.values(entry)) : [entry];
-      const dtsModule: string[] = [];
+      const entryPaths =
+        typeof entry === 'object'
+          ? Array.isArray(entry)
+            ? entry
+            : Object.values(entry)
+          : [entry]
+      const dtsModule: string[] = []
 
       for (const entryPath of entryPaths) {
-        const resolvedEntryPath = path.resolve(config.root, entryPath);
+        const resolvedEntryPath = path.resolve(config.root, entryPath)
         const entryImportPath = path.relative(
           path.resolve(config.root, outDir),
           resolvedEntryPath.replace(/\.tsx?$/, '')
         )
-  
-        const posixEntryImportPath = entryImportPath.split(path.sep).join(path.posix.sep)
-  
+
+        const posixEntryImportPath = entryImportPath
+          .split(path.sep)
+          .join(path.posix.sep)
+
         const entryImpl = fs.readFileSync(resolvedEntryPath, 'utf8')
         const hasDefaultExport =
-          /^(export default |export \{[^}]+? as default\s*[,}])/m.test(entryImpl)
-  
+          /^(export default |export \{[^}]+? as default\s*[,}])/m.test(
+            entryImpl
+          )
+
         dtsModule.push(`export * from "${posixEntryImportPath}"`)
         if (hasDefaultExport) {
           dtsModule.push(`export {default} from "${posixEntryImportPath}"`)
         }
       }
-      
-      const source = dtsModule.join("\n");
+
+      const source = dtsModule.join('\n')
 
       plugin.generateBundle = function ({ entryFileNames }) {
         if (entryFileNames == cjsModulePath) {
@@ -73,4 +83,9 @@ export const plugin: Plugin = {
         }
       }
     },
+  }
+
+  return plugin;
 }
+
+export default dts;
