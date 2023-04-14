@@ -41,21 +41,24 @@ export const dts = () => {
                 }
             }
             const source = dtsModule.join('\n');
-            plugin.generateBundle = function ({ entryFileNames }) {
-                if (entryFileNames == cjsModulePath) {
-                    this.emitFile({
-                        type: 'asset',
-                        fileName: cjsModulePath.replace(/\.js$/, '.d.ts'),
-                        source,
-                    });
-                }
-                else if (entryFileNames == esModulePath) {
-                    this.emitFile({
-                        type: 'asset',
-                        fileName: esModulePath.replace(/\.js$/, '.d.ts'),
-                        source,
-                    });
-                }
+            plugin.generateBundle = function (_, assets) {
+                const assetValues = Object.values(assets);
+                assetValues.map(({ fileName }) => {
+                    if (fileName === cjsModulePath) {
+                        this.emitFile({
+                            type: 'asset',
+                            fileName: cjsModulePath.replace(/\.js$/, '.d.ts'),
+                            source,
+                        });
+                    }
+                    else if (fileName === esModulePath) {
+                        this.emitFile({
+                            type: 'asset',
+                            fileName: esModulePath.replace(/\.js$/, '.d.ts'),
+                            source,
+                        });
+                    }
+                });
             };
         },
     };
