@@ -74,16 +74,18 @@ const dts = () => {
                 const assetValues = Object.values(assets);
                 assetValues.map(({ fileName }) => {
                     if (fileName === cjsModulePath) {
+                        const { name } = path.parse(cjsModulePath);
                         this.emitFile({
                             type: 'asset',
-                            fileName: cjsModulePath.replace(/\.js$/, '.d.ts'),
+                            fileName: `${name}.d.ts`,
                             source,
                         });
                     }
                     else if (fileName === esModulePath) {
+                        const { name } = path.parse(esModulePath);
                         this.emitFile({
                             type: 'asset',
-                            fileName: esModulePath.replace(/\.js$/, '.d.ts'),
+                            fileName: `${name}.d.ts`,
                             source,
                         });
                     }
